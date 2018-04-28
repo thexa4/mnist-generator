@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+outputdir=$DIR/data/samples/
+
+fontid=0
+while read font; do
+	echo $font
+	for digit in 0 1 2 3 4 5 6 7 8 9; do
+		
+		for rotation in {-40..40}; do
+			convert -background black -fill white -size 200x200 -gravity center -font "$font" label:$digit -rotate $rotation ${outputdir}/${digit}/${fontid}_${rotation}.png &
+		done
+	
+	done
+
+	wait
+	fontid=$((fontid + 1))
+
+done < $DIR/data/fontlist.txt

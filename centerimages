@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+
+from scipy import misc
+from scipy import ndimage
+import numpy as np
+import glob
+import sys
+import os
+import skimage
+import skimage.transform as sktrans
+
+out_file = sys.argv[2]
+images = []
+paths = glob.glob(sys.argv[1] + "/*.png")
+
+done = 0
+
+for image_path in paths:
+	image = misc.imread(image_path)
+	if len(image.shape) != 3:
+		continue  # all zero image (imagemagick artifact)
+	bw = image[:,:,0]
+	
+	nonzero_x = np.where(bw.max(axis=1) > 0)[0]
+	nonzero_y = np.where(bw.max(axis=0) > 0)[0]
+	left_x = min(nonzero_x)
+	right_x = max(nonzero_x)
+	top_y = min(nonzero_y)
+	bottom_y = max(nonzero_y)
+	
+	cropped = bw[left_x:right_x, top_y:bottom_y]
+	if done % 1000 == 0:
+		print(left_x,right_x, top_y,bottom_y)
+		misc.imsave(out_file + ".orig." + str(done) + ".png", bw)
+		misc.imsave(out_file + ".cropped." + str(done) + ".png", cropped)
+
+	width, height = cropped.shape
+	
+	scale = 20 / max(width, height)
+
+	scaled = sktrans.rescale(cropped, scale)
+	if scaled.shape[0] != 20 and scaled.shape[1] != 20:
+		print("error during rescaling " + image_path)
+		continue
+
+	com_x, com_y = ndimage.measurements.center_of_mass(scaled)
+
+	pad_left = int(round(14.0 - com_x))
+	pad_top = int(round(14.0 - com_y))
+	pad_right = 28 - pad_left - scaled.shape[0]
+	pad_bottom = 28 - pad_top - scaled.shape[1]
+
+	padded = np.pad(scaled, [(max(0, pad_left), max(0, pad_right)), (max(0, pad_top), max(0, pad_bottom))], 'constant')
+	if pad_left < 0:
+		padded = padded[-pad_left:, :]
+	if pad_top < 0:
+		padded = padded[:, -pad_top:]
+	if pad_right < 0:
+		padded = padded[:pad_right, :]
+	if pad_bottom < 0:
+		padded = padded[:, :pad_bottom]
+
+	if padded.shape != (28, 28):
+		raise ValueError("bad output shape during: " + image_path)
+
+	new_com_x, new_com_y = ndimage.measurements.center_of_mass(padded)
+	if new_com_x < 13.5 or new_com_x > 14.5 or new_com_y < 13.5 or new_com_y > 14.5:
+		raise ValueError("bad center of mass during: " + image_path)
+
+	images.append(padded)
+	
+	if done % 1000 == 0:
+		misc.imsave(out_file + ".preview." + str(done) + ".png", padded)
+		print("done: " + str(done) + " / " + str(len(paths)))
+	
+	done = done + 1
+
+np.save(out_file, images)
+
+

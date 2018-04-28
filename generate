@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+$DIR/listfonts > $DIR/data/fontlist.txt
+$DIR/createsamples
+
+for i in {0..9}; do
+	$DIR/centerimages $DIR/data/samples/$i/ $DIR/data/$i.npy
+done

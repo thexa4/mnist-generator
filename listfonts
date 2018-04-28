@@ -1,0 +1,3 @@
+#!/bin/bash
+
+convert -list font | grep Font: | cut -d' ' -f4 | grep -v Dingbats | grep -v Symbol

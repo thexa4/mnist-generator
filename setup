@@ -1,0 +1,7 @@
+#debian 9
+
+apt install fonts-liberation fonts-lindenhill fonts-linex fonts-lobster fonts-opendyslexic fonts-pecita fonts-yanone-kaffeesatz ttf-sjfonts  fonts-breip fonts-dkg-handwriting fonts-humor-sans fonts-rufscript
+
+apt install imagemagick python3
+
+pip3 install pillow tensorflow scikit-image
